@@ -1,0 +1,91 @@
+DataSet location
+https://data.cityofnewyork.us/Transportation/2017-Green-Taxi-Trip-Data/5gj9-2kzx
+
+Setup
+1. Download the dataset to the local path, modify file data_prep.py with the dataset path
+2. Extract the zip file 
+
+Environment
+spark 2.3.4,python 2.7.5, centos
+Solution for the problem has two approachs based on the feature set
+
+0. Data Preparation
+Prepares training as well as the evaluation dataset files
+files:
+data_prep.py
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Solution 1++++++++++++++++++++++++++++++++++++++++++++++++++
+1. Feature set with fare_amount
+i.files:
+model_gbt_all.py  
+model_gbt_pred_all.py  
+model_tuning_gbt_all.py
+
+ii.features
+categorical = []
+numericCols = ["i_fare_amount","improvement_surcharge","i_tolls_amount","tip_amount","extra","mta_tax","trip_distance", "passenger_count"]
+encColumns = ["i_fare_amount","trip_type","payment_type","RatecodeID","weekend","peak_time"]
+
+iii.label
+'i_total_amount'
+
+IV. Execution.
+#data preperation 2017 Jan as training, 2017 Feb as evaluation => creates df_train_all.csv, df_evaluate_all.csv
+$>spark-submit ./data_prep.py
+
+#feature engineering,model tuning for hyper parameters
+$>nohup spark-submit ./model_tuning_gbt_all.py > 30Dec19_gbt_all.log 2>&1 &
+maxIter 25, maxDepth 5 are the values got as hyper parameters for best model
+train data RMSE error:  3.22627
+evaluate data RMSE error: 4.35299
+
+#feature engineering,model creation and model saving ("./GBT_25iter_5depth-model")
+$>nohup spark-submit ./model_gbt_all.py > 30Dec19_gbt_model_all.log 2>&1 &
+
+#prediction using the model "./GBT_25iter_5depth-model"
+$>nohup spark-submit ./model_gbt_pred_all.py > 30Dec19_gbt_pred_all.log 2>&1 &
+results will be saved in the file "gbt_eval_all_pred.csv"
+
+V. model files
+GBT_25iter_5depth-model
+
+VI.output files
+gbt_eval_all_pred.csv
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++Solution 2++++++++++++++++++++++++++++++++++++++++++++++++++
+2. Feature set without fare_amount
+i.files:
+model_gbt_all_0.py  
+model_gbt_pred_all_0.py  
+model_tuning_gbt_all_0.py
+
+ii.features
+categorical = []
+numericCols = ["improvement_surcharge","i_tolls_amount","tip_amount","extra","mta_tax","trip_distance", "passenger_count"]
+encColumns = ["trip_type","payment_type","RatecodeID","weekend","peak_time"]
+
+iii.label
+'i_total_amount'
+
+IV. Execution.
+#data preperation 2017 Jan as training, 2017 Feb as evaluation => creates df_train_all.csv, df_evaluate_all.csv
+$>spark-submit ./data_prep.py
+
+#feature engineering, model tuning for hyper parameters
+$>nohup spark-submit ./model_tuning_gbt_all_0.py > 30Dec19_gbt_all_0.log 2>&1 &
+maxIter 25, maxDepth 5 are the values got as hyper parameters for best model
+train data RMSE error:  4.49347
+evaluate data RMSE error:  5.41053
+
+#feature engineering,model creation and model saving ("./GBT_25iter_5depth-model_0")
+$>nohup spark-submit ./model_gbt_all_0.py > 30Dec19_gbt_model_all_0.log 2>&1 &
+
+#prediction using the model "./GBT_25iter_5depth-model_0"
+$>nohup spark-submit ./model_gbt_pred_all_0.py > 30Dec19_gbt_pred_all_0.log 2>&1 &
+results will be saved in the file "gbt_eval_all_pred_0.csv"
+
+V. model files
+GBT_25iter_5depth-model_0
+
+VI.output files
+gbt_eval_all_pred_0.csv
