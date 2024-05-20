@@ -1,1 +1,1 @@
-This Folder is for Time Series Projects
+This folder is for timeseries 
